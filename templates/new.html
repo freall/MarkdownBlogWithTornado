@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block body %}
+		<form action="/new" method="post">
+			{% raw xsrf_form_html() %}
+			<label for="title">标题</label>
+			<input type="text" name='title' /> <br />
+			<label for="content">内容</label> <br />
+			<textarea name='content' cols="100" rows="100"></textarea> <br />
+			<input type="submit" />
+		</form>
+{% end %}

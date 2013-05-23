@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block header %}
+   <h1>{{ page_title }}</h1>
+{% end %}
+{% block body %}
+    {% for post in posts %}
+    <div class="post-item">
+    	<h3><a href="/{{post['postid']}}">{{post['title']}}</a></h3>
+    </div>
+    {% end %}
+{% end %}

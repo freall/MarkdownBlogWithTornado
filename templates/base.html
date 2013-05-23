@@ -1,0 +1,22 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<title>{{ page_title }}</title>
+		<link rel="stylesheet" href="{{ static_url("css/markdown.css") }}" />
+	</head>
+	<body>
+		<div id="container">
+			<header>
+				{% block header %}{% end %}
+			</header>
+			<div id="main">
+				<div id="content">
+					{% block body %}{% end %}
+				</div>
+			</div>
+			<footer>
+				{% block footer %}{% end %}
+			</footer>
+		</div>
+	</body>
+</html>

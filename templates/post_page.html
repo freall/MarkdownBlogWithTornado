@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% autoescape None %}
+
+{% block body %}
+    <h1>{{ post['title'] }}</h1>
+    {{ post['content_html'] }}
+{% end %}
