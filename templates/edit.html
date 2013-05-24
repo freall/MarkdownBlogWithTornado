@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block body %}
+        <form action="/edit/{{article['postid']}}" method="post">
+            {% raw xsrf_form_html() %}
+            <label for="title">标题</label>
+            <input type="text" name='title' value="{{article['title']}}" > <br />
+            <label for="content">内容</label> <br />
+            <textarea name='content' cols="100" rows="50">
+                {{ article['content_md'] }}
+            </textarea> <br />
+            <input type="submit" />
+        </form>
+{% end %}
