@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block body %}
+    {% for article in articles %}
+    <div class="post-item">
+    	<a href="/{{article['postid']}}">{{article['title']}}</a> <br />
+        <a href="/edit/{{article['postid']}}">Edit</a>
+        <a href="/delete/{{article['postid']}}">Delete</a> <br />
+        <br />
+    </div>
+    {% end %}
+{% end %}

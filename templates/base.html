@@ -3,12 +3,13 @@
 	<head>
 		<title>{{ page_title }}</title>
 		<link rel="stylesheet" href="{{ static_url("css/markdown.css") }}" />
+        {% block other_head_part %}{% end %}
 	</head>
 	<body>
 		<div id="container">
-			<header>
-				{% block header %}{% end %}
-			</header>
+            {% block header %}
+                <h1><a href="/">{{ blogInfo['title'] }}</a> </h1>
+            {% end %}
 			<div id="main">
 				<div id="content">
 					{% block body %}{% end %}
@@ -18,5 +19,10 @@
 				{% block footer %}{% end %}
 			</footer>
 		</div>
+
+    <!-- UY BEGIN -->
+<div id="uyan_frame"></div>
+<script type="text/javascript" id="UYScript" src="http://v1.uyan.cc/js/iframe.js?UYUserId=1698680" async=""></script>
+<!-- UY END -->
 	</body>
 </html>

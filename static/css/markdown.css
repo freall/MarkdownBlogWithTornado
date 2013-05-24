@@ -165,7 +165,7 @@ input[type=password],
 textarea,
 select {
   display: inline-block;
-  width: 210px;
+  width: auto;
   padding: 4px;
   font-size: 13px;
   font-weight: normal;

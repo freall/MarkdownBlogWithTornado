@@ -8,6 +8,7 @@ import time
 import json
 import hashlib
 
+
 import tornado.web
 import tornado.options
 import tornado.httpserver
@@ -17,7 +18,7 @@ import markdown
 import pymongo
 
 from tornado.options import define, options
-define('port', default = 8000, help = 'Run on the given port', type = int)
+define('port', default = 8000, help='Run on the given port', type=int)
 
 class BaseHandler(tornado.web.RequestHandler):
     def get_current_user(self):
@@ -25,33 +26,85 @@ class BaseHandler(tornado.web.RequestHandler):
 
 class IndexHandler(tornado.web.RequestHandler):
     def get(self):
-        posts = self.application.dbhandler.getAllPosts()
-        self.render('index.html', page_title = self.application.bloginfo['title'], posts = posts)
+        articles = self.application.dbHandler.getAllArticles()
+        self.render('index.html',
+                    blogInfo=self.application.blogInfo,
+                    page_title=self.application.blogInfo['title'],
+                    articles=articles)
 
-class NewPostHandler(BaseHandler):
+class AdminHandler(BaseHandler):
     @tornado.web.authenticated
     def get(self):
-        self.render('new.html', page_title = 'index')
+        articles = self.application.dbHandler.getAllArticles()
+        self.render('admin.html', page_title=self.application.blogInfo['title'],
+                    blogInfo=self.application.blogInfo,
+                    articles=articles)
+
+class DeleteHandler(BaseHandler):
+    @tornado.web.authenticated
+    def get(self, articleID):
+        pass
+
+
+class NewArticleHandler(BaseHandler):
+    @tornado.web.authenticated
+    def get(self):
+        self.render('new.html', page_title='New Article', blogInfo=self.application.blogInfo,)
         
     @tornado.web.authenticated
     def post(self):
         title = self.get_argument('title')
         content_md = self.get_argument('content')
         content_html = markdown.markdown(content_md)
-        postid = self.application.dbhandler.savePost(title, content_md, content_html)
-        self.redirect('/' + str(postid))
+        article = {
+            'title': title,
+            'content_md': content_md,
+            'content_html': content_html
+        }
+        articleID = self.application.dbHandler.saveArticle(article)
+        self.redirect('/' + str(articleID))
 
-class PostHandler(BaseHandler):
-    def get(self, postid):
-        post = self.application.dbhandler.getPostById(int(postid))
-        if not post:
-            self.set_status(404, 'Not Find Post!')
+class ArticlePageHandler(BaseHandler):
+    def get(self, articleID):
+        article = self.application.dbHandler.getArticleById(int(articleID))
+        if not article:
+            self.set_status(404, 'Not Find Article!')
         else: 
-            self.render('post_page.html', page_title = post['title'], post = post)
+            self.render('article_page.html',
+                        page_title=article['title'],
+                        blogInfo=self.application.blogInfo,
+                        article=article)
+
+class EditArticleHandler(BaseHandler):
+    @tornado.web.authenticated
+    def get(self, articleID):
+        if articleID:
+            article = self.application.dbHandler.getArticleById(int(articleID))
+            if article:
+                self.render('edit.html', page_title='Edit',
+                            blogInfo=self.application.blogInfo,
+                            article=article)
+            else:
+                self.set_status(404)
+
+    def post(self, articleID):
+        if not articleID:
+            self.redirect('/')
+        article = self.application.dbHandler.getArticleById(int(articleID))
+        title = self.get_argument('title')
+        content_md = self.get_argument('content')
+        content_html = markdown.markdown(content_md)
+        article = {
+            'title': title,
+            'content_md': content_md,
+            'content_html': content_html
+        }
+        self.application.dbHandler.modifyArticleById(articleID, article)
+        self.redirect('/' + str(articleID))
 
 class LoginHandler(BaseHandler):
     def get(self):
-        self.render('login.html', page_title='Login')
+        self.render('login.html', page_title='Login', blogInfo=self.application.blogInfo,)
         
     def post(self):
         username = self.get_argument('username', None)
@@ -60,8 +113,8 @@ class LoginHandler(BaseHandler):
         if not username or not password:
             self.redirect('/login')
             return
-        passstring = self.application.dbhandler.getPassStringByName(username)
-        if not passstring or passstring != password:
+        passString = self.application.dbHandler.getPassStringByName(username)
+        if not passString or passString != password:
             self.redirect('/login')
             return
         else:
@@ -73,28 +126,39 @@ class LogoutHandler(BaseHandler):
         pass
 
 class DBHandler(object):
-    def __init__(self, host, port, dbname):
+    def __init__(self, host, port, dbName):
         conn = pymongo.Connection(host, 27017)
-        self.db = conn[dbname]
+        self.db = conn[dbName]
         
-    def savePost(self, title, content_md, content_html):
-        maxid_item = self.db.posts.find().sort('postid', pymongo.DESCENDING).limit(1)[0]
-        maxid = maxid_item['postid']
-        newid = maxid + 1
+    def saveArticle(self, article):
+        maxIdItem = self.db.posts.find().sort('postid', pymongo.DESCENDING).limit(1)[0]
+        maxId = maxIdItem['postid']
+        newId = maxId + 1
         self.db.posts.insert({
-            'postid': newid,
+            'postid': newId,
             'time': time.time(),
-            'title': title,
-            'content_md': content_md, 
-            'content_html': content_html
+            'title': article['title'],
+            'content_md': article['content_md'],
+            'content_html': article['content_html']
         })
-        return newid
+        return newId
 
-    def getPostById(self, postid):
-        doc = self.db.posts.find_one({'postid': postid})
+    def modifyArticleById(self, articleID, modifiedArticle):
+        foundArticle = self.getArticleById(int(articleID))
+        if not foundArticle:
+            postid = self.saveArticle(modifiedArticle)
+            return postid
+        foundArticle['title'] = modifiedArticle['title']
+        foundArticle['content_md'] = modifiedArticle['content_md']
+        foundArticle['content_html'] = modifiedArticle['content_html']
+        self.db.posts.save(foundArticle)
+
+
+    def getArticleById(self, articleID):
+        doc = self.db.posts.find_one({'postid': articleID})
         return doc
 
-    def getAllPosts(self):
+    def getAllArticles(self):
         return self.db.posts.find().sort('postid', pymongo.DESCENDING)
     
     def getPassStringByName(self, username):
@@ -112,13 +176,16 @@ class DBHandler(object):
 class Application(tornado.web.Application):
     def __init__(self):
 
-        self.dbhandler = DBHandler("localhost", 27017, "MarkdownBlog")
-        self.bloginfo = self.dbhandler.getBlogInfo()
+        self.dbHandler = DBHandler("localhost", 27017, "MarkdownBlog")
+        self.blogInfo = self.dbHandler.getBlogInfo()
         
         handlers = [
             (r'/', IndexHandler),
-            (r'/new', NewPostHandler),
-            (r'/(\d+)', PostHandler),
+            (r'/new', NewArticleHandler),
+            (r'/(\d+)', ArticlePageHandler),
+            (r'/edit/(\d+)', EditArticleHandler),
+            (r'/delete/(\d+)', DeleteHandler),
+            (r'/admin', AdminHandler),
             (r'/login', LoginHandler),
             (r'/logout', LogoutHandler)
         ]
